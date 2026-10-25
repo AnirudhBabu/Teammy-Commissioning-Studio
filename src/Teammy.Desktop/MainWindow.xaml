@@ -1,0 +1,402 @@
+<Window x:Class="Teammy.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Teammy.Desktop"
+        Title="Teammy · Commissioning Studio" Width="1500" Height="980" MinWidth="1220" MinHeight="760"
+        WindowStartupLocation="CenterScreen" AutomationProperties.Name="Teammy Commissioning Studio">
+    <Window.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
+    </Window.InputBindings>
+    <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="226" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <Border Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+            <Grid Margin="20,28,20,20">
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="36" Height="36" Background="{StaticResource MintBrush}" CornerRadius="10" Margin="0,0,11,0">
+                            <Path Data="M 8 11 L 26 11 M 17 11 L 17 27 M 10 18 L 24 18" Stroke="#10372E" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="teammy" FontSize="23" FontWeight="Bold" /><TextBlock Text="COMMISSIONING STUDIO" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                    </StackPanel>
+                    <Border Margin="0,28,0,0" Background="#1B2E3B" CornerRadius="6" Padding="10,8">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="6" Height="6" Fill="{StaticResource MintBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding ModeLabel}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource MintBrush}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Margin="0,30,0,18">
+                    <TextBlock Text="ENGINEERING WORKSPACES" Style="{StaticResource Eyebrow}" Margin="7,0,0,13" />
+                    <ListBox ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}" IsEnabled="{Binding CanChangeConfigurationSelection}"
+                             AutomationProperties.Name="Choose engineering project">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
+                                    <TextBlock Text="{Binding Location}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+                <Border Grid.Row="2" VerticalAlignment="Bottom" Background="#152433" CornerRadius="10" Padding="14" Margin="0,12,0,24">
+                    <StackPanel>
+                        <TextBlock Text="SIMULATED BY DESIGN" Style="{StaticResource Eyebrow}" Foreground="{StaticResource BlueBrush}" />
+                        <TextBlock Text="Validate the workflow.&#10;Understand the decisions." FontSize="14" FontWeight="SemiBold" Margin="0,10,0,8" />
+                        <TextBlock Text="No PLC or motor is connected. Release approval records a reviewed configuration; it never operates equipment." Style="{StaticResource MutedText}" FontSize="11" LineHeight="17" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Row="3">
+                    <TextBlock Text="{Binding RevisionLabel}" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource MintBrush}" />
+                    <TextBlock Text="{Binding ConnectionDescription}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,7,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1" Margin="30,25,30,0">
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <Grid Margin="0,0,0,21">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="ENGINEERING / PROJECT WORKSPACE" Style="{StaticResource Eyebrow}" />
+                    <TextBlock Text="{Binding WorkspaceTitle}" FontSize="28" FontWeight="SemiBold" Margin="0,8,0,5" />
+                    <TextBlock Text="{Binding WorkspaceDescription}" Style="{StaticResource MutedText}" MaxWidth="660" HorizontalAlignment="Left" />
+                    <TextBlock Text="{Binding ProjectTeamName}" FontSize="11" Foreground="{StaticResource BlueBrush}" Margin="0,8,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="18,0,0,0" MinWidth="220" MaxWidth="280">
+                    <DockPanel LastChildFill="False" Margin="0,0,0,9">
+                        <Button DockPanel.Dock="Right" Content="↻  Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource QuietButton}" ToolTip="Refresh workspace (F5)" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding ActorDisplay}" HorizontalAlignment="Right" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    <Grid Margin="0,9,0,0" Visibility="{Binding AllowsActorSwitch, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding IsIdle}">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <ComboBox ItemsSource="{Binding DemoActors}" SelectedItem="{Binding SelectedDemoActor}" DisplayMemberPath="DisplayName"
+                                  FontSize="11" MinHeight="32" AutomationProperties.Name="Demonstration identity" />
+                        <Button Grid.Column="1" Content="Switch" Command="{Binding ChangeActorCommand}" Margin="7,0,0,0" Padding="10,6" MinHeight="32" FontSize="11" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1" Background="#35212C" BorderBrush="#724454" BorderThickness="1" CornerRadius="8" Padding="13"
+                    Margin="0,0,0,14" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" AutomationProperties.LiveSetting="Assertive">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Dismiss" Command="{Binding DismissErrorCommand}" Style="{StaticResource QuietButton}" Padding="10,4" MinHeight="28" Margin="12,0,0,0" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" VerticalAlignment="Center" />
+                </DockPanel>
+            </Border>
+
+            <TabControl Grid.Row="2" SelectedIndex="{Binding SelectedTabIndex}">
+                <TabItem Header="_Overview">
+                    <ScrollViewer Padding="0,0,7,16">
+                        <StackPanel>
+                            <Border Background="#182E3D" BorderBrush="#2F5263" BorderThickness="1" CornerRadius="13" Padding="25,22" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="210" /></Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="FROM WORK ITEM TO VERIFIED RELEASE" Style="{StaticResource Eyebrow}" Foreground="{StaticResource MintBrush}" />
+                                        <TextBlock Text="Commissioning, with confidence." FontSize="25" FontWeight="SemiBold" Margin="0,10,0,9" />
+                                        <TextBlock Text="One workspace for the team, the drive parameters,&#10;and the evidence behind every release." Foreground="#B8CBDC" FontSize="13" LineHeight="21" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,19,0,0">
+                                            <Button Content="Open drive studio  →" Command="{Binding NavigateCommand}" CommandParameter="2" Style="{StaticResource PrimaryButton}" />
+                                            <Button Content="Review workboard" Command="{Binding NavigateCommand}" CommandParameter="1" Style="{StaticResource QuietButton}" Margin="10,0,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Viewbox Grid.Column="1" Margin="18,0,0,0" Stretch="Uniform" MaxHeight="160" IsHitTestVisible="False">
+                                        <Canvas Width="200" Height="160">
+                                            <Ellipse Canvas.Left="28" Canvas.Top="8" Width="136" Height="136" Stroke="#36586A" StrokeThickness="1" />
+                                            <Ellipse Canvas.Left="49" Canvas.Top="29" Width="94" Height="94" Stroke="#3A6775" StrokeThickness="1" StrokeDashArray="3 5" />
+                                            <Rectangle Canvas.Left="65" Canvas.Top="41" Width="63" Height="69" RadiusX="9" RadiusY="9" Fill="#203F50" Stroke="#7CE0C4" StrokeThickness="2" />
+                                            <Path Canvas.Left="79" Canvas.Top="57" Data="M 16 0 L 2 22 L 15 22 L 9 38 L 31 12 L 18 12 Z" Fill="#7CE0C4" />
+                                            <Path Data="M 0 75 L 64 75 M 128 75 L 196 75 M 96 8 L 96 40 M 96 110 L 96 157" Stroke="#7CE0C4" StrokeThickness="2" Opacity="0.6" />
+                                            <Ellipse Canvas.Left="2" Canvas.Top="71" Width="8" Height="8" Fill="#98B7FF" />
+                                            <Ellipse Canvas.Left="188" Canvas.Top="71" Width="8" Height="8" Fill="#7CE0C4" />
+                                            <Ellipse Canvas.Left="92" Canvas.Top="2" Width="8" Height="8" Fill="#7CE0C4" />
+                                            <Ellipse Canvas.Left="92" Canvas.Top="150" Width="8" Height="8" Fill="#98B7FF" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </Grid>
+                            </Border>
+                            <UniformGrid Columns="4" Margin="0,0,-12,20">
+                                <Border Style="{StaticResource Panel}" Margin="0,0,12,0"><StackPanel><TextBlock Text="OPEN WORK" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding OpenWorkItemCount}" FontSize="34" FontWeight="SemiBold" Margin="0,7,0,4" /><TextBlock Text="Across this project" Style="{StaticResource MutedText}" /></StackPanel></Border>
+                                <Border Style="{StaticResource Panel}" Margin="0,0,12,0"><StackPanel><TextBlock Text="BLOCKING WORK" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding BlockingWorkItemCount}" FontSize="34" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" Margin="0,7,0,4" /><TextBlock Text="High and critical priority" Style="{StaticResource MutedText}" /></StackPanel></Border>
+                                <Border Style="{StaticResource Panel}" Margin="0,0,12,0"><StackPanel><TextBlock Text="VERIFIED DRIVES" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding VerifiedDriveCount}" FontSize="34" FontWeight="SemiBold" Foreground="{StaticResource MintBrush}" Margin="0,7,0,4" /><TextBlock Text="{Binding VerificationLabel}" Style="{StaticResource MutedText}" /></StackPanel></Border>
+                                <Border Style="{StaticResource Panel}" Margin="0,0,12,0"><StackPanel><TextBlock Text="DELIVERY PROGRESS" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding CompletionPercentage, StringFormat={}{0:0}%}" FontSize="34" FontWeight="SemiBold" Foreground="{StaticResource BlueBrush}" Margin="0,7,0,4" /><TextBlock Text="{Binding CompletionLabel}" Style="{StaticResource MutedText}" /></StackPanel></Border>
+                            </UniformGrid>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.35*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Border Style="{StaticResource Panel}" Margin="0,0,16,0">
+                                    <StackPanel>
+                                        <DockPanel><TextBlock Text="Release readiness" Style="{StaticResource SectionTitle}" /><TextBlock Text="{Binding ReadinessLabel}" Foreground="{StaticResource AmberBrush}" HorizontalAlignment="Right" FontSize="11" /></DockPanel>
+                                        <ItemsControl ItemsSource="{Binding ReadinessChecks}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,0,0,15">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                        <Border Width="20" Height="20" CornerRadius="10" VerticalAlignment="Top">
+                                                            <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#473C2B" /><Style.Triggers><DataTrigger Binding="{Binding Passed}" Value="True"><Setter Property="Background" Value="#24483E" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                            <TextBlock Text="•" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MintBrush}" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" /><TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,4,0,0" /></StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Button Content="Open release review  →" Command="{Binding NavigateCommand}" CommandParameter="3" Style="{StaticResource QuietButton}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource Panel}">
+                                    <StackPanel>
+                                        <TextBlock Text="A deliberate release path" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="01   Coordinate the work" FontWeight="SemiBold" Foreground="{StaticResource BlueBrush}" />
+                                        <TextBlock Text="Assign owners. Resolve blockers. Move critical work through review." Style="{StaticResource MutedText}" Margin="0,6,0,19" />
+                                        <TextBlock Text="02   Prove the configuration" FontWeight="SemiBold" Foreground="{StaticResource MintBrush}" />
+                                        <TextBlock Text="Edit parameters within the drive profile and inspect deterministic simulation results." Style="{StaticResource MutedText}" Margin="0,6,0,19" />
+                                        <TextBlock Text="03   Get a second pair of eyes" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" />
+                                        <TextBlock Text="An independent approver reviews a fingerprinted candidate. Every mutation leaves an audit entry." Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="_Workboard">
+                    <ScrollViewer Padding="0,0,7,16">
+                        <StackPanel>
+                            <Border Style="{StaticResource Panel}" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <DockPanel><TextBlock Text="Plan the engineering work" Style="{StaticResource SectionTitle}" /><TextBlock Text="{Binding RoleHint}" HorizontalAlignment="Right" Style="{StaticResource MutedText}" /></DockPanel>
+                                    <Grid IsEnabled="{Binding CanEngineer}">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="2.4*" /><ColumnDefinition Width="1.3*" /><ColumnDefinition Width="0.8*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,12,0"><TextBlock Text="Work item title" Style="{StaticResource FieldLabel}" /><TextBox Text="{Binding NewWorkItemTitle, UpdateSourceTrigger=PropertyChanged}" MaxLength="160" AutomationProperties.Name="New work item title" /></StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,12,0"><TextBlock Text="Owner" Style="{StaticResource FieldLabel}" /><ComboBox ItemsSource="{Binding TeamMembers}" SelectedItem="{Binding SelectedAssignee}" DisplayMemberPath="DisplayName" AutomationProperties.Name="Work item owner" /></StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="0,0,12,0"><TextBlock Text="Priority" Style="{StaticResource FieldLabel}" /><ComboBox ItemsSource="{Binding Priorities}" SelectedItem="{Binding NewWorkItemPriority}" AutomationProperties.Name="Work item priority" /></StackPanel>
+                                        <StackPanel Grid.Column="3" Margin="0,0,12,0"><TextBlock Text="Due date" Style="{StaticResource FieldLabel}" /><DatePicker SelectedDate="{Binding NewDueDate}" Height="38" AutomationProperties.Name="Work item due date" /></StackPanel>
+                                        <Button Grid.Column="4" Content="+ Add item" Command="{Binding CreateWorkItemCommand}" Style="{StaticResource PrimaryButton}" VerticalAlignment="Bottom" />
+                                    </Grid>
+                                    <TextBox Text="{Binding NewWorkItemDescription, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEngineer}" MaxLength="2000"
+                                             Margin="0,12,0,0" AutomationProperties.Name="Work item description" ToolTip="Optional acceptance criteria or engineering context" />
+                                    <TextBlock Text="Optional description / acceptance criteria" Style="{StaticResource MutedText}" FontSize="11" Margin="0,5,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding BoardColumns}" Margin="0,0,-10,18">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#111D2A" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="9" Padding="10" Margin="0,0,10,0" MinHeight="300">
+                                            <StackPanel>
+                                                <DockPanel Margin="3,3,3,16"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12" /><TextBlock Text="{Binding CountLabel}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" /></DockPanel>
+                                                <ItemsControl ItemsSource="{Binding Items}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button Command="{Binding DataContext.SelectWorkItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                                                    Background="{StaticResource CardBrush}" BorderBrush="#2B3D54" Padding="11" Margin="0,0,0,9" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Title}">
+                                                                <StackPanel>
+                                                                    <DockPanel><TextBlock Text="{Binding Code}" Foreground="{StaticResource BlueBrush}" FontFamily="Consolas" FontSize="11" /><TextBlock Text="{Binding Priority}" HorizontalAlignment="Right" Foreground="{StaticResource AmberBrush}" FontSize="11" /></DockPanel>
+                                                                    <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Margin="0,10,0,12" TextWrapping="Wrap" />
+                                                                    <TextBlock Text="{Binding DueDate, StringFormat=Due {0:dd MMM}}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Style="{StaticResource Panel}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="225" /></Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,20,0">
+                                        <TextBlock Text="SELECTED WORK ITEM" Style="{StaticResource Eyebrow}" />
+                                        <TextBlock Text="{Binding SelectedWorkItem.Title}" FontSize="17" FontWeight="SemiBold" Margin="0,7,0,6" />
+                                        <TextBlock Text="{Binding SelectedWorkItem.Description}" Style="{StaticResource MutedText}" />
+                                        <TextBlock Text="{Binding SelectedWorkItemAssignee, StringFormat=Owner: {0}}" Foreground="{StaticResource BlueBrush}" FontSize="11" Margin="0,9,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Move to next stage" Style="{StaticResource FieldLabel}" />
+                                        <ComboBox ItemsSource="{Binding WorkItemStatuses}" SelectedItem="{Binding TargetWorkItemStatus}" IsEnabled="{Binding CanEngineer}" AutomationProperties.Name="Work item next stage" />
+                                        <Button Content="Move work item" Command="{Binding TransitionWorkItemCommand}" Margin="0,9,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="_Drive studio">
+                    <ScrollViewer Padding="0,0,7,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="225" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,18,0">
+                                <TextBlock Text="DRIVE CONFIGURATIONS" Style="{StaticResource Eyebrow}" Margin="4,3,0,14" />
+                                <ListBox ItemsSource="{Binding Configurations}" SelectedItem="{Binding SelectedConfiguration}" IsEnabled="{Binding CanChangeConfigurationSelection}" AutomationProperties.Name="Choose drive configuration">
+                                    <ListBox.ItemTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold" /><TextBlock Text="{Binding Revision, StringFormat=Configuration revision {0}}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,6,0,0" /><TextBlock Text="{Binding TargetSpeedRpm, StringFormat={}{0:0} rpm target}" Foreground="{StaticResource MintBrush}" FontFamily="Consolas" FontSize="11" Margin="0,8,0,0" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+                                </ListBox>
+                                <Border Style="{StaticResource Panel}" Padding="15" Margin="0,15,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="PROFILE ENVELOPE" Style="{StaticResource Eyebrow}" />
+                                        <TextBlock Text="{Binding SelectedProfile.Name}" FontWeight="SemiBold" Margin="0,10,0,12" />
+                                        <TextBlock Text="{Binding SelectedProfile.MaxSpeedRpm, StringFormat=Max speed · {0:0} rpm}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{Binding SelectedProfile.RatedCurrentAmps, StringFormat=Rated current · {0:0.0} A}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{Binding SelectedProfile.MaxRampRateRpmPerSecond, StringFormat=Max ramp · {0:0} rpm/s}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{Binding SelectedProfile.MaxTemperatureCelsius, StringFormat=Thermal limit · {0:0} °C}" Style="{StaticResource MutedText}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <Border Style="{StaticResource Panel}" Margin="0,0,0,18">
+                                    <StackPanel>
+                                        <DockPanel><TextBlock Text="{Binding SelectedConfiguration.Name}" Style="{StaticResource SectionTitle}" /><TextBlock Text="PARAMETER EDITOR" Style="{StaticResource Eyebrow}" HorizontalAlignment="Right" /></DockPanel>
+                                        <UniformGrid Columns="3" IsEnabled="{Binding CanEngineer}" Margin="0,0,-14,0">
+                                            <StackPanel Margin="0,0,14,15"><TextBlock Text="Target speed · rpm" Style="{StaticResource FieldLabel}" /><TextBox Text="{Binding TargetSpeedText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Target speed in rpm" /></StackPanel>
+                                            <StackPanel Margin="0,0,14,15"><TextBlock Text="Acceleration · seconds" Style="{StaticResource FieldLabel}" /><TextBox Text="{Binding AccelerationText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Acceleration time in seconds" /></StackPanel>
+                                            <StackPanel Margin="0,0,14,15"><TextBlock Text="Deceleration · seconds" Style="{StaticResource FieldLabel}" /><TextBox Text="{Binding DecelerationText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Deceleration time in seconds" /></StackPanel>
+                                            <StackPanel Margin="0,0,14,15"><TextBlock Text="Current limit · A" Style="{StaticResource FieldLabel}" /><TextBox Text="{Binding CurrentLimitText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Current limit in amperes" /></StackPanel>
+                                            <StackPanel Margin="0,0,14,15"><TextBlock Text="Mechanical load · %" Style="{StaticResource FieldLabel}" /><TextBox Text="{Binding LoadText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Mechanical load percentage" /></StackPanel>
+                                        </UniformGrid>
+                                        <DockPanel Margin="0,2,0,0">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Content="Discard" Command="{Binding DiscardConfigurationCommand}" Style="{StaticResource QuietButton}" Margin="0,0,9,0" />
+                                                <Button Content="Save parameters" Command="{Binding SaveConfigurationCommand}" Margin="0,0,9,0" />
+                                                <Button Content="▶  Run simulation" Command="{Binding RunSimulationCommand}" Style="{StaticResource PrimaryButton}" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding ConfigurationHint}" Style="{StaticResource MutedText}" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Panel}" Margin="0,0,0,18">
+                                    <StackPanel>
+                                        <DockPanel><TextBlock Text="{Binding SimulationLabel}" Style="{StaticResource SectionTitle}" /><Border Background="#233A35" CornerRadius="4" Padding="8,4" HorizontalAlignment="Right" VerticalAlignment="Top"><TextBlock Text="SIMULATED TELEMETRY" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource MintBrush}" /></Border></DockPanel>
+                                        <TextBlock Text="{Binding SimulationDetail}" Style="{StaticResource MutedText}" Margin="0,-4,0,14" />
+                                        <local:TelemetryChart Samples="{Binding Telemetry}" Height="175" AutomationProperties.Name="Simulated speed over time chart" />
+                                        <UniformGrid Columns="3" Margin="0,15,0,18">
+                                            <StackPanel><TextBlock Text="PEAK SPEED" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding PeakSpeed}" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource MintBrush}" Margin="0,5,0,0" /></StackPanel>
+                                            <StackPanel><TextBlock Text="PEAK CURRENT" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding PeakCurrent}" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource BlueBrush}" Margin="0,5,0,0" /></StackPanel>
+                                            <StackPanel><TextBlock Text="PEAK TEMPERATURE" Style="{StaticResource Eyebrow}" /><TextBlock Text="{Binding PeakTemperature}" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" Margin="0,5,0,0" /></StackPanel>
+                                        </UniformGrid>
+                                        <ItemsControl ItemsSource="{Binding SimulationChecks}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#101C28" CornerRadius="6" Padding="12,10" Margin="0,0,0,7">
+                                                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="65" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                            <TextBlock FontFamily="Consolas" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center">
+                                                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="FAIL" /><Setter Property="Foreground" Value="{StaticResource ErrorBrush}" /><Style.Triggers><DataTrigger Binding="{Binding Passed}" Value="True"><Setter Property="Text" Value="PASS" /><Setter Property="Foreground" Value="{StaticResource MintBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                            </TextBlock>
+                                                            <StackPanel Grid.Column="1"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" /><TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,3,0,0" /></StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="This deterministic model demonstrates software validation. It is not a digital twin or a substitute for equipment commissioning." Style="{StaticResource MutedText}" FontSize="11" Margin="0,9,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="_Releases">
+                    <ScrollViewer Padding="0,0,7,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="1.15*" /></Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,18,0">
+                                <Border Style="{StaticResource Panel}" Margin="0,0,0,18">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding ReadinessLabel}" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding ReadinessDescription}" Style="{StaticResource MutedText}" Margin="0,0,0,17" />
+                                        <ItemsControl ItemsSource="{Binding ReadinessChecks}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#101C28" CornerRadius="6" Padding="12" Margin="0,0,0,9">
+                                                        <StackPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource AmberBrush}" /><Style.Triggers><DataTrigger Binding="{Binding Passed}" Value="True"><Setter Property="Foreground" Value="{StaticResource MintBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,5,0,0" /></StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="Release notes" Style="{StaticResource FieldLabel}" Margin="0,13,0,7" />
+                                        <TextBox Text="{Binding ReleaseNotes, UpdateSourceTrigger=PropertyChanged}" Height="90" AcceptsReturn="True" TextWrapping="Wrap" IsEnabled="{Binding CanEngineer}" MaxLength="2000" AutomationProperties.Name="Release request notes" />
+                                        <Button Content="Request independent review" Command="{Binding RequestReleaseCommand}" Style="{StaticResource PrimaryButton}" Margin="0,13,0,0" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#1D2A3C" CornerRadius="9" Padding="17">
+                                    <StackPanel><TextBlock Text="CHANGE INVALIDATES APPROVAL" Style="{StaticResource Eyebrow}" Foreground="{StaticResource BlueBrush}" /><TextBlock Text="Candidates are tied to a configuration fingerprint. A parameter or readiness change requires fresh evidence and a new review." Style="{StaticResource MutedText}" Margin="0,8,0,0" /></StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <Border Style="{StaticResource Panel}" Margin="0,0,0,18">
+                                    <StackPanel>
+                                        <TextBlock Text="Release candidates" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="Select a candidate to inspect its decision and review notes." Style="{StaticResource MutedText}" Margin="0,0,0,12" />
+                                        <ListBox ItemsSource="{Binding Releases}" SelectedItem="{Binding SelectedRelease}" MaxHeight="260" AutomationProperties.Name="Release candidates">
+                                            <ListBox.ItemTemplate><DataTemplate><StackPanel><DockPanel><TextBlock Text="{Binding Status}" FontWeight="SemiBold" Foreground="{StaticResource MintBrush}" /><TextBlock Text="{Binding RequestedAt, StringFormat={}{0:dd MMM · HH:mm} UTC}" HorizontalAlignment="Right" Style="{StaticResource MutedText}" FontSize="11" /></DockPanel><TextBlock Text="{Binding Notes}" FontSize="12" Margin="0,8,0,5" /><TextBlock Text="{Binding Id}" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Panel}">
+                                    <StackPanel>
+                                        <TextBlock Text="Independent review" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding ReviewHint}" Foreground="{StaticResource AmberBrush}" FontSize="12" Margin="0,0,0,15" />
+                                        <TextBlock Text="{Binding ReleaseEvidenceLabel}" Foreground="{StaticResource BlueBrush}" FontSize="11" Margin="0,0,0,15" />
+                                        <TextBlock Text="{Binding SelectedRelease.RequestedBy, StringFormat=Requested by: {0}}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{Binding SelectedRelease.ReviewedBy, StringFormat=Reviewed by: {0}}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{Binding SelectedRelease.Fingerprint, StringFormat=Fingerprint: {0}}" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource BlueBrush}" Margin="0,0,0,15" />
+                                        <TextBlock Text="{Binding SelectedRelease.ReviewNote}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
+                                        <TextBlock Text="Reason for rejection" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding RejectionReason, UpdateSourceTrigger=PropertyChanged}" Height="74" AcceptsReturn="True" TextWrapping="Wrap" IsEnabled="{Binding CanReviewSelectedRelease}" MaxLength="2000" AutomationProperties.Name="Reason for rejecting release" />
+                                        <WrapPanel Margin="0,14,0,0">
+                                            <Button Content="Approve release" Command="{Binding ApproveReleaseCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+                                            <Button Content="Reject with reason" Command="{Binding RejectReleaseCommand}" Style="{StaticResource QuietButton}" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="_Activity">
+                    <Border Style="{StaticResource Panel}" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <DockPanel><TextBlock Text="A record of every decision" Style="{StaticResource SectionTitle}" /><TextBlock Text="WORKSPACE AUDIT · UTC" Style="{StaticResource Eyebrow}" HorizontalAlignment="Right" /></DockPanel>
+                            <TextBlock Grid.Row="1" Text="Every successful mutation records its actor, action, resource, and committed revision. The connected API returns the latest 100 entries." Style="{StaticResource MutedText}" Margin="0,0,0,18" />
+                            <ScrollViewer Grid.Row="2">
+                                <ItemsControl ItemsSource="{Binding AuditEntries}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,15">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="105" /><ColumnDefinition Width="*" /><ColumnDefinition Width="160" /></Grid.ColumnDefinitions>
+                                                    <StackPanel><TextBlock Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss}}" FontFamily="Consolas" FontSize="12" Foreground="{StaticResource MintBrush}" /><TextBlock Text="{Binding Revision, StringFormat=revision {0}}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,6,0,0" /></StackPanel>
+                                                    <StackPanel Grid.Column="1" Margin="0,0,20,0"><TextBlock Text="{Binding Summary}" FontWeight="SemiBold" /><TextBlock Text="{Binding Action}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,5,0,0" /><TextBlock Text="{Binding ResourceId}" Foreground="{StaticResource MutedBrush}" FontFamily="Consolas" FontSize="11" Margin="0,4,0,0" /></StackPanel>
+                                                    <StackPanel Grid.Column="2"><TextBlock Text="{Binding ActorName}" FontSize="12" /><TextBlock Text="{Binding ActorRole}" Foreground="{StaticResource BlueBrush}" FontSize="11" Margin="0,5,0,0" /></StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <TextBlock Grid.Row="2" Text="No activity yet. Save parameters, run a simulation, or move a work item to create the first audit entry."
+                                       VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430" TextAlignment="Center" Foreground="{StaticResource MutedBrush}">
+                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding HasAuditEntries}" Value="False"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                </TabItem>
+            </TabControl>
+            <Grid Grid.Row="3" Margin="0,8,0,0">
+                <Grid.RowDefinitions><RowDefinition Height="3" /><RowDefinition Height="36" /></Grid.RowDefinitions>
+                <ProgressBar IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" Height="3" />
+                <DockPanel Grid.Row="1">
+                    <Button DockPanel.Dock="Right" Content="Cancel" Command="{Binding CancelCommand}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" MinHeight="24" Padding="10,3" Style="{StaticResource QuietButton}" FontSize="11" />
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                </DockPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

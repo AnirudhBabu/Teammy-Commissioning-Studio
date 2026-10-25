@@ -1,0 +1,16 @@
+{
+  "solution": {
+    "path": "Teammy.sln",
+    "projects": [
+      "src/Teammy.Domain/Teammy.Domain.csproj",
+      "src/Teammy.Application/Teammy.Application.csproj",
+      "src/Teammy.Infrastructure/Teammy.Infrastructure.csproj",
+      "src/Teammy.Api/Teammy.Api.csproj",
+      "src/Teammy.Presentation/Teammy.Presentation.csproj",
+      "tests/Teammy.Domain.Tests/Teammy.Domain.Tests.csproj",
+      "tests/Teammy.Infrastructure.Tests/Teammy.Infrastructure.Tests.csproj",
+      "tests/Teammy.Api.Tests/Teammy.Api.Tests.csproj",
+      "tests/Teammy.Presentation.Tests/Teammy.Presentation.Tests.csproj"
+    ]
+  }
+}

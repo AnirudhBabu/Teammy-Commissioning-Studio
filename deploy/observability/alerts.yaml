@@ -1,0 +1,36 @@
+# Example 99.9% availability objective; validate actual exported labels and paging first.
+groups:
+  - name: teammy-availability
+    rules:
+      - record: teammy:http_error_ratio:5m
+        expr: (sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*",http_response_status_code=~"5.."}[5m])) or vector(0)) / clamp_min(sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*"}[5m])) or vector(0), 0.000001)
+      - record: teammy:http_error_ratio:1h
+        expr: (sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*",http_response_status_code=~"5.."}[1h])) or vector(0)) / clamp_min(sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*"}[1h])) or vector(0), 0.000001)
+      - record: teammy:http_error_ratio:30m
+        expr: (sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*",http_response_status_code=~"5.."}[30m])) or vector(0)) / clamp_min(sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*"}[30m])) or vector(0), 0.000001)
+      - record: teammy:http_error_ratio:6h
+        expr: (sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*",http_response_status_code=~"5.."}[6h])) or vector(0)) / clamp_min(sum(rate(http_server_request_duration_seconds_count{service_name="teammy-api",http_route=~"/api/.*"}[6h])) or vector(0), 0.000001)
+      - alert: TeammyFastBudgetBurn
+        expr: teammy:http_error_ratio:5m > (14.4 * 0.001) and teammy:http_error_ratio:1h > (14.4 * 0.001)
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: Teammy is consuming its availability budget rapidly
+          runbook: docs/operations.md
+      - alert: TeammySustainedBudgetBurn
+        expr: teammy:http_error_ratio:30m > (6 * 0.001) and teammy:http_error_ratio:6h > (6 * 0.001)
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: Teammy has sustained availability degradation
+          runbook: docs/operations.md
+      - alert: TeammyCollectorUnavailable
+        expr: up{job="teammy-collector"} == 0
+        for: 2m
+        labels:
+          severity: ticket
+        annotations:
+          summary: Teammy metric collection is unavailable
+          runbook: docs/operations.md

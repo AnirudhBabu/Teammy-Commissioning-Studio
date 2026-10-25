@@ -1,0 +1,185 @@
+name: Verify
+
+on:
+  push:
+    branches: [main, master, 'modernization/**']
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_XMLDOC_MODE: skip
+
+jobs:
+  server:
+    name: Server and shared rules / Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine@sha256:eee6c6e1b0894fa4fe0075eb054af9fd1cf39a35321c2d4110626cfe506411fb
+        env:
+          POSTGRES_DB: teammy_tests
+          POSTGRES_USER: teammy
+          POSTGRES_PASSWORD: disposable-ci-database
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U teammy -d teammy_tests"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      TEAMMY_TEST_POSTGRES: Host=127.0.0.1;Port=5432;Database=teammy_tests;Username=teammy;Password=disposable-ci-database
+      TEAMMY_TEST_PROVISION_ROLE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages*.lock.json'
+      - name: Locked restore, analyzers, tests, coverage, dependency audit
+        run: bash scripts/verify.sh
+      - name: Publish API
+        run: dotnet publish src/Teammy.Api/Teammy.Api.csproj -c Release --no-restore -o artifacts/api
+      - name: Exercise the real HTTP host
+        shell: bash
+        run: |
+          ASPNETCORE_ENVIRONMENT=Development Authentication__DemoEnabled=true \
+          Database__Provider=Sqlite Database__Initialize=true \
+          ConnectionStrings__Workspace='Data Source=/tmp/teammy-smoke.db' \
+          ASPNETCORE_URLS=http://127.0.0.1:5080 \
+          dotnet artifacts/api/Teammy.Api.dll > artifacts/http-smoke.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python3 scripts/smoke-api.py --demo
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: server-verification
+          path: |
+            artifacts/test-results
+            artifacts/nuget-audit.json
+            artifacts/http-smoke.log
+          retention-days: 14
+
+  desktop:
+    name: WPF / Windows
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages*.lock.json'
+      - name: Verify Windows build and shared behavior
+        shell: pwsh
+        run: ./scripts/verify.ps1 -Desktop
+      - name: Publish standalone desktop
+        shell: pwsh
+        run: |
+          dotnet publish src/Teammy.Desktop/Teammy.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:RestoreLockedMode=true -o artifacts/desktop/win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop publish failed' }
+      - name: Start and render the actual WPF window
+        shell: pwsh
+        run: |
+          $image = Join-Path $PWD 'artifacts/desktop-smoke.png'
+          $app = Start-Process -FilePath artifacts/desktop/win-x64/Teammy.Desktop.exe -ArgumentList @('--smoke-test', $image) -PassThru
+          if (-not $app.WaitForExit(60000)) { $app.Kill(); throw 'WPF smoke test timed out' }
+          if ($app.ExitCode -ne 0) { throw "WPF smoke test failed: $($app.ExitCode)" }
+          if (-not (Test-Path $image)) { throw 'No WPF screenshot produced' }
+      - name: Preserve desktop package and evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-desktop
+          path: |
+            artifacts/desktop
+            artifacts/desktop-smoke*
+            artifacts/test-results
+          retention-days: 14
+
+  infrastructure:
+    name: Terraform validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        stack: [platform, service]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.17.0
+      - name: Format and validate without a cloud account
+        working-directory: deploy/terraform/${{ matrix.stack }}
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -lockfile=readonly
+          terraform validate
+
+  security:
+    name: Source and container security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Prepare evidence directory
+        run: mkdir -p artifacts
+      - name: Build deployable image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          load: true
+          tags: teammy-api:verify
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Scan current source for secrets and vulnerable dependencies
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          version: v0.76.1
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Scan runtime image
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          version: v0.76.1
+          image-ref: teammy-api:verify
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: false
+      - name: Export CycloneDX SBOM
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          version: v0.76.1
+          image-ref: teammy-api:verify
+          format: cyclonedx
+          output: artifacts/teammy-api.cdx.json
+          exit-code: '0'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: software-bill-of-materials
+          path: artifacts/teammy-api.cdx.json
+          retention-days: 30

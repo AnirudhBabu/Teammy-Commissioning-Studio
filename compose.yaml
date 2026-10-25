@@ -1,0 +1,52 @@
+name: teammy
+
+x-api: &api
+  image: teammy-api:local
+  build: .
+  read_only: true
+  tmpfs:
+    - /tmp:size=32m,mode=1777
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  environment: &api-environment
+    ASPNETCORE_ENVIRONMENT: Development
+    Database__Provider: PostgreSql
+    Database__Initialize: "false"
+    ConnectionStrings__Workspace: "Host=database;Port=5432;Database=teammy;Username=teammy;Password=${TEAMMY_DEV_DB_PASSWORD:?Run scripts/dev-up.sh first};Timeout=5;Command Timeout=10"
+    Authentication__DemoEnabled: "true"
+
+services:
+  database:
+    image: postgres:17-alpine@sha256:eee6c6e1b0894fa4fe0075eb054af9fd1cf39a35321c2d4110626cfe506411fb
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: teammy
+      POSTGRES_USER: teammy
+      POSTGRES_PASSWORD: ${TEAMMY_DEV_DB_PASSWORD:?Run scripts/dev-up.sh first}
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U teammy -d teammy"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    # Intentionally no host port: only the API can reach the development database.
+
+  migrate:
+    <<: *api
+    command: [--migrate]
+    restart: "no"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  api:
+    <<: *api
+    restart: unless-stopped
+    ports: ["127.0.0.1:5080:8080"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  database-data:

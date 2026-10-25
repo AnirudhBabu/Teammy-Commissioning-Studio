@@ -1,0 +1,8 @@
+# Copy to a local backend configuration, or pass these values through -backend-config.
+# Use distinct keys: teammy-platform.tfstate and teammy-service.tfstate.
+resource_group_name  = "your-existing-state-resource-group"
+storage_account_name = "yourexistingstatestorage"
+container_name       = "tfstate"
+key                  = "teammy-platform.tfstate"
+use_azuread_auth     = true
+use_oidc             = true

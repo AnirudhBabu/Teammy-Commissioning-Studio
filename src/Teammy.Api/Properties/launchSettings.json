@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Demo": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Authentication__DemoEnabled": "true",
+        "Database__Provider": "Sqlite",
+        "Database__Initialize": "true",
+        "ConnectionStrings__Workspace": "Data Source=teammy.db;Default Timeout=10"
+      }
+    }
+  }
+}
